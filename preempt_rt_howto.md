@@ -10,21 +10,9 @@ improvemens (e.g. for systems with accelerated graphics). All new features are
 available in the patch queue before they are included into the mainline kernel.
 The latest version of the patches is available
 [here](https://cdn.kernel.org/pub/linux/kernel/projects/rt/)
+and a git tree is available [here](https://git.kernel.org/pub/scm/linux/kernel/git/rt/linux-rt-devel.git).
 
 For production use it is recommended to use the latest available stable version.
-This example is based on [Linux
-6.12.16-rt9](https://cdn.kernel.org/pub/linux/kernel/projects/rt/6.12/patch-6.12.16-rt9.patch.xz).
-The kernel can be downloaded and patched with the following commands:
-
-```
-$ wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.16.tar.xz
-$ wget https://cdn.kernel.org/pub/linux/kernel/projects/rt/6.12/patch-6.12.16-rt9.patch.xz
-$ tar xf linux-6.12.16.tar.xz
-$ mv linux-6.12.16 linux-6.12.16-rt9
-$ cd linux-6.12.16-rt9
-$ zcat ../patch-6.12.16-rt9.patch.xz | patch -p1
-```
-Now the kernel is ready to be configured and compiled.
 
 # Configuration of the kernel
 The most important setting is "Fully Preemptible Kernel" (CONFIG_PREEMPT_RT). On
@@ -47,9 +35,41 @@ SLUB_DEBUG
 Building and starting the kernel works similarly to a kernel without PREEMPT_RT
 enabled.
 
+# Using a pre-packaged kernel with PREEMPT_RT enabled
+Some buildsystems and distributions already offer pre-built binaries and/or recipes
+which can be used to take the first steps and to explore how to work with PREEMPT_RT.
+
+## Debian
+Debian offers pre-packaged kernels for x86 and ARM64 with PREEMPT_RT enabled.
+These can simply be installed with the package manager:
+
+```
+# apt-get install linux-image-rt-amd64
+```
+
+## Yocto
+The Yocto project provides dedicated recipes for kernels with PREEMPT_RT
+enabled. The relevant kernel recipe is 'linux-yocto-rt' and the corresponding
+image recipe (depending on linux-yocto-rt) is 'core-image-rt'. This image recipe
+includes some extra tools, such as rt-tests (described later in this article).
+To build an image with linux-yocto-rt you have to add
+
+```
+PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-rt"
+```
+
+to your local.conf, bblayers.conf or \$MACHINE.conf. If you are creating a new
+BSP using linux-yocto-rt by default, you need add this to the \$MACHINE.conf of
+the BSP layer and additionally add this line in a bbappend recipe for
+linux-yocto-rt:
+
+```
+COMPATIBLE_MACHINE:$MACHINE = $MACHINE
+```
+
 # Testing the real-time behaviour
-After booting the system it is recommended to check if PREEMPT_RT was succesfully
-enabled. This can be done by
+After booting the system it is recommended to check if PREEMPT_RT is enabled.
+This can be done by
 
 ```
 $ uname -a
@@ -93,6 +113,10 @@ microseconds in /proc/sys/kernel/sched_rt_runtime_us. The default value is
 being reserved for non real-time tasks. If the system is running real-time
 workloads for 950ms it won't schedule real-time applications for the
 next 50ms. This behavior can be disabled by writing -1 to /proc/sys/kernel/sched_rt_runtime_us.
+
+Another method for evaluating the real-time behaviour and to identify possible
+sources of latencies is the real-time Linux analysis tool (rtla). Further
+information on rtla can be found in the [kernel documentation](https://docs.kernel.org/tools/rtla/index.html). Video recordings of presentations on rtla are avaiable from the [Embedded Linux Conference](https://www.youtube.com/watch?v=-hJ558URAP4) and the [Embedded Open Source Summit](https://www.youtube.com/watch?v=kIMko-07BV0).
 
 # Typical pitfalls
 
